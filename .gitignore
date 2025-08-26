@@ -7,7 +7,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Generated output files and reports directory
+# Output files and reports directory
 reports/
 github-loc-*.json
 github-loc-summary-*.txt
