@@ -1,0 +1,42 @@
+{
+  "name": "github-loc-report",
+  "version": "0.0.0",
+  "description": "",
+  "scripts": {
+    "test": "jest --testPathPattern=test-gh-loc-report.js --verbose",
+    "test:watch": "jest --testPathPattern=test-gh-loc-report.js --watch",
+    "start": "node gh-loc-report.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bullishpip/github-loc-report.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/bullishpip/github-loc-report/issues"
+  },
+  "homepage": "https://github.com/bullishpip/github-loc-report#readme",
+  "dependencies": {
+    "@octokit/rest": "^22.0.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": ["**/test-gh-loc-report.js"],
+    "collectCoverage": true,
+    "coverageDirectory": "coverage",
+    "coverageReporters": ["text", "lcov"],
+    "transformIgnorePatterns": [
+      "node_modules/(?!@octokit/)"
+    ],
+    "moduleNameMapper": {
+      "^@octokit/(.*)$": "<rootDir>/node_modules/@octokit/$1"
+    }
+  }
+}
