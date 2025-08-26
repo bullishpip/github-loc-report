@@ -1,4 +1,4 @@
-# GitHub Lines of Code Report
+---
 
 A Node.js tool to calculate lines of code contributed to GitHub repositories in a given year.
 
@@ -61,7 +61,7 @@ The tool will:
 | `GITHUB_USERNAME` | Yes | Your GitHub username |
 | `ANALYSIS_YEAR` | No | Year to analyze (defaults to 2025) |
 
-## Output Files
+## 📁 Output Files
 
 All output files are saved to the `./reports` directory:
 - `github-loc-{username}-{year}-{timestamp}.json` - Detailed analysis results
