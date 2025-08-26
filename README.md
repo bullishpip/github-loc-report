@@ -160,3 +160,30 @@ node gh-loc-report.js username/my-awesome-project
 ```bash
 node gh-loc-report.js
 ```
+
+### Example: Analyzing this project repository
+```bash
+node gh-loc-report.js github-loc-report
+```
+
+**Results:**
+```
+GitHub Lines of Code Analysis for bullishpip (2025)
+============================================================
+Analysis Mode: Single Repository
+Total Lines Added: 1,361
+Total Lines Deleted: 150
+Net Lines of Code: 1,211
+Total Commits: 7
+Repositories Analyzed: 1
+Total API Calls: 11
+
+Processing Status:
+✅ Successfully processed: 1 repositories
+❌ Failed to process: 0 repositories
+
+Top Repositories by Lines Added:
+1. bullishpip/github-loc-report: +1,361 lines (0.0 MB)
+```
+
+This example shows the analysis of the `github-loc-report` project itself, demonstrating how the tool tracks lines of code added, deleted, and the net change over time.
