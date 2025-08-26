@@ -84,6 +84,24 @@ class GitHubLOCCalculator {
     return repos;
   }
 
+  async getRepositoryByName(repoName) {
+    console.log(`Searching for repository: ${repoName}`);
+    const repos = await this.getAllRepositories();
+    const repo = repos.find(repo => 
+      repo.name === repoName || 
+      repo.full_name === repoName ||
+      repo.full_name === `${this.username}/${repoName}`
+    );
+    
+    if (repo) {
+      console.log(`Found repository: ${repo.full_name}`);
+    } else {
+      console.log(`Repository '${repoName}' not found`);
+    }
+    
+    return repo;
+  }
+
   async processRepository(repo, since, until) {
     try {
       console.log(`\nProcessing repository: ${repo.full_name}`);
@@ -336,7 +354,7 @@ class GitHubLOCCalculator {
     return !excludePatterns.some(pattern => pattern.test(filename));
   }
 
-  async calculateLOCForYear() {
+  async calculateLOCForYear(targetRepo = null) {
     const since = new Date(`${this.year}-01-01T00:00:00Z`);
     const until = new Date(`${this.year}-12-31T23:59:59Z`);
     
@@ -344,7 +362,24 @@ class GitHubLOCCalculator {
     console.log(`Date range: ${since.toISOString()} to ${until.toISOString()}`);
     console.log(`Rate limiting: max ${this.maxRequestsPerHour} requests/hour\n`);
     
-    const repos = await this.getAllRepositories();
+    let repos = [];
+    let analysisMode = 'all';
+    
+    if (targetRepo) {
+      // Single repository mode
+      analysisMode = 'single';
+      console.log(`Single repository mode: ${targetRepo}`);
+      const repo = await this.getRepositoryByName(targetRepo);
+      if (!repo) {
+        throw new Error(`Repository '${targetRepo}' not found`);
+      }
+      repos = [repo];
+    } else {
+      // All repositories mode
+      console.log(`All repositories mode`);
+      repos = await this.getAllRepositories();
+    }
+    
     const results = {
       totalAdditions: 0,
       totalDeletions: 0,
@@ -363,10 +398,11 @@ class GitHubLOCCalculator {
         successful: 0,
         failed: 0,
         failedRepos: []
-      }
+      },
+      analysisMode: analysisMode
     };
     
-    console.log(`\nProcessing ${repos.length} repositories...\n`);
+    console.log(`\nProcessing ${repos.length} repository${repos.length === 1 ? '' : 'ies'}...\n`);
     
     for (let i = 0; i < repos.length; i++) {
       const repo = repos[i];
@@ -405,6 +441,7 @@ class GitHubLOCCalculator {
     console.log(`\n${'='.repeat(60)}`);
     console.log(`PROCESSING SUMMARY`);
     console.log(`${'='.repeat(60)}`);
+    console.log(`Analysis mode: ${analysisMode}`);
     console.log(`Total repositories: ${repos.length}`);
     console.log(`Successfully processed: ${results.processingStatus.successful}`);
     console.log(`Failed to process: ${results.processingStatus.failed}`);
@@ -450,6 +487,7 @@ class GitHubLOCCalculator {
     summary += '='.repeat(60) + '\n\n';
     
     summary += `Analysis Date: ${results.processedAt}\n`;
+    summary += `Analysis Mode: ${results.analysisMode === 'single' ? 'Single Repository' : 'All Repositories'}\n`;
     summary += `Total API Calls Made: ${results.runtimeStats.totalApiCalls.toLocaleString()}\n\n`;
     
     summary += `OVERALL STATISTICS:\n`;
@@ -504,6 +542,12 @@ class GitHubLOCCalculator {
     console.log('\n' + '='.repeat(60));
     console.log(`GITHUB LINES OF CODE SUMMARY FOR ${this.year}`);
     console.log('='.repeat(60));
+    
+    // Analysis mode
+    if (results.analysisMode) {
+      console.log(`Analysis Mode: ${results.analysisMode === 'single' ? 'Single Repository' : 'All Repositories'}`);
+    }
+    
     console.log(`Total Lines Added: ${results.totalAdditions.toLocaleString()}`);
     console.log(`Total Lines Deleted: ${results.totalDeletions.toLocaleString()}`);
     console.log(`Net Lines of Code: ${results.netLines.toLocaleString()}`);
@@ -557,6 +601,10 @@ async function main() {
   const GITHUB_USERNAME = process.env.GITHUB_USERNAME;
   const ANALYSIS_YEAR = process.env.ANALYSIS_YEAR || '2025';
   
+  // Parse command line arguments
+  const args = process.argv.slice(2);
+  const targetRepo = args[0] || null;
+  
   if (!GITHUB_TOKEN || !GITHUB_USERNAME) {
     console.error('❌ Missing required environment variables!');
     console.error('');
@@ -581,10 +629,15 @@ async function main() {
     console.log('====================================');
     console.log(`Target user: ${GITHUB_USERNAME}`);
     console.log(`Analysis year: ${ANALYSIS_YEAR}`);
+    if (targetRepo) {
+      console.log(`Target repository: ${targetRepo}`);
+    } else {
+      console.log(`Target: All repositories`);
+    }
     console.log(`Start time: ${new Date().toISOString()}\n`);
     
     const calculator = new GitHubLOCCalculator(GITHUB_TOKEN, GITHUB_USERNAME, parseInt(ANALYSIS_YEAR));
-    const results = await calculator.calculateLOCForYear();
+    const results = await calculator.calculateLOCForYear(targetRepo);
     
     calculator.printSummary(results);
     await calculator.saveResults(results);

@@ -30,9 +30,20 @@ A Node.js tool to calculate lines of code contributed to GitHub repositories in 
 
 ## Usage
 
-Run the analysis:
+### Analyze All Repositories
+Run the analysis on all your repositories:
 ```bash
 node gh-loc-report.js
+```
+
+### Analyze Single Repository
+Run the analysis on a specific repository:
+```bash
+# By repository name
+node gh-loc-report.js my-repo-name
+
+# By full repository name
+node gh-loc-report.js username/my-repo-name
 ```
 
 The tool will:
@@ -58,8 +69,14 @@ All output files are saved to the `./reports` directory:
 
 ## Features
 
+### Analysis Modes
+- **All Repositories Mode**: Analyzes all repositories in your GitHub account
+- **Single Repository Mode**: Analyzes only the specified repository
+- **Flexible Repository Naming**: Supports both repository name and full repository name (username/repo-name)
+
 ### Repository Processing
 - **Comprehensive Repository Discovery**: Fetches all repositories across multiple pages (up to 1000 pages)
+- **Repository Search**: Efficiently finds specific repositories by name or full name
 - **Processing Status Tracking**: Tracks which repositories were successfully processed vs. failed
 - **Error Handling**: Gracefully handles API errors and continues processing other repositories
 - **Progress Reporting**: Shows real-time progress as repositories are processed
@@ -118,5 +135,28 @@ The tool handles various error scenarios:
 - Repository access issues
 - Large commit processing
 - File truncation
+- Non-existent repository errors
 
 All errors are logged and the tool continues processing other repositories.
+
+## Examples
+
+### Analyze all repositories for 2024
+```bash
+ANALYSIS_YEAR=2024 node gh-loc-report.js
+```
+
+### Analyze a specific repository
+```bash
+node gh-loc-report.js my-awesome-project
+```
+
+### Analyze a repository by full name
+```bash
+node gh-loc-report.js username/my-awesome-project
+```
+
+### Analyze all repositories for current year
+```bash
+node gh-loc-report.js
+```

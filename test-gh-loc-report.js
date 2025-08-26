@@ -20,6 +20,11 @@ class MockGitHubLOCCalculator {
     ];
   }
 
+  async getRepositoryByName(repoName) {
+    const repos = await this.getAllRepositories();
+    return repos.find(repo => repo.name === repoName || repo.full_name === repoName);
+  }
+
   async processRepository(repo, since, until) {
     // Mock implementation
     if (repo.name === 'repo3') {
@@ -61,11 +66,24 @@ class MockGitHubLOCCalculator {
     return !excludePatterns.some(pattern => pattern.test(filename));
   }
 
-  async calculateLOCForYear() {
+  async calculateLOCForYear(targetRepo = null) {
     const since = new Date(`${this.year}-01-01T00:00:00Z`);
     const until = new Date(`${this.year}-12-31T23:59:59Z`);
     
-    const repos = await this.getAllRepositories();
+    let repos = [];
+    
+    if (targetRepo) {
+      // Single repository mode
+      const repo = await this.getRepositoryByName(targetRepo);
+      if (!repo) {
+        throw new Error(`Repository '${targetRepo}' not found`);
+      }
+      repos = [repo];
+    } else {
+      // All repositories mode
+      repos = await this.getAllRepositories();
+    }
+    
     const results = {
       totalAdditions: 0,
       totalDeletions: 0,
@@ -84,7 +102,8 @@ class MockGitHubLOCCalculator {
         successful: 0,
         failed: 0,
         failedRepos: []
-      }
+      },
+      analysisMode: targetRepo ? 'single' : 'all'
     };
     
     for (const repo of repos) {
@@ -136,6 +155,30 @@ describe('GitHubLOCCalculator', () => {
     });
   });
 
+  describe('getRepositoryByName', () => {
+    test('should find repository by name', async () => {
+      const repo = await calculator.getRepositoryByName('repo1');
+      
+      expect(repo).toBeDefined();
+      expect(repo.name).toBe('repo1');
+      expect(repo.full_name).toBe('test-user/repo1');
+    });
+
+    test('should find repository by full name', async () => {
+      const repo = await calculator.getRepositoryByName('test-user/repo2');
+      
+      expect(repo).toBeDefined();
+      expect(repo.name).toBe('repo2');
+      expect(repo.full_name).toBe('test-user/repo2');
+    });
+
+    test('should return undefined for non-existent repository', async () => {
+      const repo = await calculator.getRepositoryByName('non-existent-repo');
+      
+      expect(repo).toBeUndefined();
+    });
+  });
+
   describe('processRepository', () => {
     test('should process repository successfully and return stats', async () => {
       const repo = {
@@ -173,9 +216,10 @@ describe('GitHubLOCCalculator', () => {
   });
 
   describe('calculateLOCForYear', () => {
-    test('should process all repositories and track status', async () => {
+    test('should process all repositories when no target specified', async () => {
       const results = await calculator.calculateLOCForYear();
       
+      expect(results.analysisMode).toBe('all');
       expect(results.totalAdditions).toBe(200); // 2 successful repos * 100
       expect(results.totalDeletions).toBe(100); // 2 successful repos * 50
       expect(results.totalCommits).toBe(4); // 2 successful repos * 2
@@ -183,6 +227,35 @@ describe('GitHubLOCCalculator', () => {
       expect(results.processingStatus.successful).toBe(2);
       expect(results.processingStatus.failed).toBe(1);
       expect(results.processingStatus.failedRepos).toContain('test-user/repo3');
+    });
+
+    test('should process single repository when target specified', async () => {
+      const results = await calculator.calculateLOCForYear('repo1');
+      
+      expect(results.analysisMode).toBe('single');
+      expect(results.totalAdditions).toBe(100); // 1 repo * 100
+      expect(results.totalDeletions).toBe(50); // 1 repo * 50
+      expect(results.totalCommits).toBe(2); // 1 repo * 2
+      expect(results.repoStats).toHaveLength(1); // 1 repo
+      expect(results.processingStatus.successful).toBe(1);
+      expect(results.processingStatus.failed).toBe(0);
+    });
+
+    test('should process single repository by full name', async () => {
+      const results = await calculator.calculateLOCForYear('test-user/repo2');
+      
+      expect(results.analysisMode).toBe('single');
+      expect(results.totalAdditions).toBe(100);
+      expect(results.totalDeletions).toBe(50);
+      expect(results.totalCommits).toBe(2);
+      expect(results.repoStats).toHaveLength(1);
+      expect(results.processingStatus.successful).toBe(1);
+    });
+
+    test('should throw error for non-existent repository', async () => {
+      await expect(calculator.calculateLOCForYear('non-existent-repo')).rejects.toThrow(
+        "Repository 'non-existent-repo' not found"
+      );
     });
   });
 
