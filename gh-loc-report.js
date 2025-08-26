@@ -28,7 +28,13 @@ class GitHubLOCCalculator {
     if (requestsPerHour > this.maxRequestsPerHour) {
       const waitTime = (this.requestCount / this.maxRequestsPerHour) * 60 * 60 * 1000 - (Date.now() - this.startTime);
       if (waitTime > 0) {
-        console.log(`Rate limit protection: waiting ${Math.round(waitTime / 1000)} seconds...`);
+        // Only log every 5 seconds to reduce noise
+        const now = Date.now();
+        if (!this.lastWaitLog || now - this.lastWaitLog >= 5000) {
+          const timeString = new Date().toLocaleString();
+          console.log(`[${timeString}] Rate limit protection hit. Waiting...`);
+          this.lastWaitLog = now;
+        }
         await new Promise(resolve => setTimeout(resolve, waitTime));
       }
     }
